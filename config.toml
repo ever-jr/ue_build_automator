@@ -1,0 +1,27 @@
+# Unreal build automation config
+
+[development]
+print_config = false
+
+[project]
+project_path = "[ProjectName]"
+uproject_path = "[ProjectPath]/[Project].uproject"
+
+[unreal]
+uat_exe_path = "C:/Program Files/Epic Games/UE_5.3/Engine/Build/BatchFiles/RunUAT.bat"
+platform = "Win64"
+build_type = "Shipping"
+output_file = "./builds"
+
+[svn]
+exe_path = "C:/Program Files/TortoiseSVN/bin/svn.exe"
+update_interval_in_seconds = 20
+
+[sounds]
+build_starting = ["./sounds/bell.wav", "./sounds/knock_knock.wav"]
+build_success = "./success_sounds/"
+build_fail = ["./failed_sounds/"]
+build_unknown_error = ["./sounds/metal_pipe.wav"]
+
+[build]
+override_zip = true
