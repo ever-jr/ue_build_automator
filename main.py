@@ -458,7 +458,7 @@ def loop_pool_and_build():
             current_rev = svn_revision(svn_exe_path, project_path)
             should_build = changed and (current_rev != last_built_rev)
 
-            if True:
+            if should_build:
                 play_random_sound(sounds_build_starting)
                 say("Começando a buildar!")
 
