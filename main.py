@@ -373,7 +373,15 @@ def compact_file(file_path: Path, should_override: bool, new_name: str | None = 
 
 def find_and_process_last_build(new_build_name: str, output_path: Path, should_override: bool):
     last_build_path = Path(BIN_DIR).resolve() / DEFAULT_BUILD_NAME
-    _ = compact_file(last_build_path, should_override, new_build_name, output_path)
+    temp_name = f"{new_build_name} TRANSFERING..."
+
+    compacted_file = compact_file(last_build_path, should_override, temp_name, output_path)
+
+    if compacted_file and compacted_file.exists():
+        new_name_path = compacted_file.parent / f"{new_build_name}{compacted_file.suffix}"
+        renamed_file = compacted_file.rename(new_name_path)
+
+        print(f"Compacted file renamed from {str(compacted_file)} to {str(renamed_file)}")
 
 
 #==============================================================================
