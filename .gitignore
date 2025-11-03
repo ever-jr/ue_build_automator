@@ -1,0 +1,5 @@
+bin/
+builds/
+sounds/
+
+config.toml
