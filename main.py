@@ -40,10 +40,7 @@ def get_config_or_default(default, config: dict[str, Any] | None, category: str,
         config[category] = config_category
 
     config_property = config_category.get(property, default)
-
-    if not config_property:
-        config_property = default
-        config[category][property] = config_property
+    config[category][property] = config_property
 
     return config_property
 
@@ -501,7 +498,7 @@ def loop_pool_and_build():
 
                 print(make_line(), f"\n🍆 Build completed for r{last_built_rev}!")
 
-                wait()
+            wait()
 
         except KeyboardInterrupt:
             print(f"{PROGRAM_NAME} Finished!")
