@@ -1,5 +1,6 @@
 bin/
 builds/
 sounds/
+__pycache__/
 
 config.toml

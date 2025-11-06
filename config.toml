@@ -4,24 +4,30 @@
 print_config = false
 
 [project]
-project_path = "[ProjectName]"
-uproject_path = "[ProjectPath]/[Project].uproject"
+path = "[ProjectPath]"
+
+[svn]
+exe_path = "C:/Program Files/TortoiseSVN/bin/svn.exe"
+update_interval_in_seconds = 20
+cleanup_timeout_in_seconds = 3600 # 1 hour
 
 [unreal]
 uat_exe_path = "C:/Program Files/Epic Games/UE_5.3/Engine/Build/BatchFiles/RunUAT.bat"
 platform = "Win64"
 build_type = "Shipping"
-output_file = "./builds"
 
-[svn]
-exe_path = "C:/Program Files/TortoiseSVN/bin/svn.exe"
-update_interval_in_seconds = 20
-
-[sounds]
-build_starting = ["./sounds/bell.wav", "./sounds/knock_knock.wav"]
-build_success = "./success_sounds/"
-build_fail = ["./failed_sounds/"]
-build_unknown_error = ["./sounds/metal_pipe.wav"]
-
-[build]
+[build_export]
+output_directory = "./builds"
 override_zip = true
+max_num_relevant_logs = 10
+
+[special_log_keywords]
+enabled = true
+make_dev_build = "#devbuild"
+ignore_build = "#ignorebuild"
+
+#[sounds]
+#build_starting = ["./sounds/bell.wav", "./sounds/knock_knock.wav"]
+#build_success = "./success_sounds/"
+#build_fail = ["./failed_sounds/"]
+#build_unknown_error = ["./sounds/metal_pipe.wav"]
