@@ -46,17 +46,21 @@ def _sh_svn(config: BuildAutomatorConfig, options: list[str]):
 
 
 def svn_cleanup(config: BuildAutomatorConfig) -> bool:
-    out = _sh_svn(
-        config,
-        options=[
-            "cleanup",
-            "--remove-unversioned",
-            "--remove-ignored",
-            "--vacuum-pristines",
-            "--include-externals",
-        ]
-    )
-    print("cleanup return code:", out.returncode)
+    try:
+        out = _sh_svn(
+            config,
+            options=[
+                "cleanup",
+                "--remove-unversioned",
+                "--remove-ignored",
+                "--vacuum-pristines",
+                "--include-externals",
+            ]
+        )
+    except Exception as e:
+        print("error cleaning while:", e)
+        return False
+
     return out.returncode == 0
 
 
@@ -259,16 +263,15 @@ def sound_play_random(sounds: list[Path] | Path):
 #==============================================================================
 # LOG HANDLING
 
-def log_commands_find(config: BuildAutomatorConfig, logs: list[str]) -> list[str]:
+def log_find_commands(config: BuildAutomatorConfig, log: str) -> list[str]:
     """Returns the list of commands found on log"""
 
     found_commands: list[str] = []
     all_commands: list[str] = config.special_log_keywords.all_commands
 
-    for log in logs:
-        for command in all_commands:
-            if log.find(command) != -1:
-                found_commands.append(command)
+    for command in all_commands:
+        if log.find(command) != -1:
+            found_commands.append(command)
 
     return found_commands
 
@@ -410,14 +413,20 @@ def _run():
             if config.should_print_configs:
                 print("Showing configs...\n\n", config)
 
+            unreal_kill_process_if_running()
+
             cleanup_time_difference: float = current_time - last_cleanup_time if last_cleanup_time != -1.0 else 0.0
-            print(f"cleanup time in seconds: {config.svn.cleanup_timeout_in_seconds} | cleanup time diff: {cleanup_time_difference}")
+            #print(f"cleanup time in seconds: {config.svn.cleanup_timeout_in_seconds} | cleanup time diff: {cleanup_time_difference}")
             if last_cleanup_time == -1 or cleanup_time_difference >= config.svn.cleanup_timeout_in_seconds:
                 print(_make_line(), "\nCLEANUP TIME!\n")
                 if svn_cleanup(config):
                     last_cleanup_time = current_time
                 else:
+                    winsound.MessageBeep()
+                    sound_say("Falha ao limpar projeto!")
                     print("Cleanup failed!")
+                    wait(config)
+                    continue
 
             has_revision_changed: bool = svn_update(config)
             current_revision: int = svn_revision(config)
@@ -427,45 +436,55 @@ def _run():
 
             if has_revision_changed:
                 max_num_relevant_logs: int = config.build_export.max_num_relevant_logs
+                num_revisions_betwen_last_and_new: int = max(0, min(max_num_relevant_logs, current_revision - last_built_revision))
+
                 ignore_build: bool = False
-                additional_build_config: BuildAutomatorConfig | None = None
 
                 logs: list[str] = []
-                if max_num_relevant_logs > 0:
-                    num_revisions_betwen_last_and_new: int = max(0, min(max_num_relevant_logs, current_revision - last_built_revision))
+                if max_num_relevant_logs > 0 and num_revisions_betwen_last_and_new > 0:
+                    print(_make_line())
+
                     print("Num revisions between last and new:", num_revisions_betwen_last_and_new)
 
-                    for revision_num in range(current_revision - num_revisions_betwen_last_and_new, current_revision + 1):
-                        logs.append(svn_log(config, revision_num))
+                    revision_start: int = current_revision - max(0, num_revisions_betwen_last_and_new - 1)
+                    revision_end: int = current_revision
+                    print("Revision start:", revision_start)
+                    print("Revision end:", revision_end)
 
-                    print(_make_line(), "\nALL LOGS:\n\n", logs)
+                    found_commands: list[str] = []
 
-                    found_commands: list[str] = log_commands_find(config, logs)
+                    print("\nLOGS:")
+                    for revision_num in range(revision_start, revision_end + 1):
+                        revision_log: str = svn_log(config, revision_num)
+                        commands_on_log: list[str] = log_find_commands(config, revision_log)
+
+                        found_commands.extend(commands_on_log)
+
+                        print("revision", revision_num)
+                        print(revision_log)
+                        logs.append(revision_log)
+
                     for command in found_commands:
                         if command == config.special_log_keywords.make_dev_build:
-                            if not additional_build_config:
-                                additional_build_config = copy(config)
-                            additional_build_config.uat.build_type = "Development"
+                            config.uat.build_type = "Development"
 
                         elif command == config.special_log_keywords.ignore_build:
-                            print("Ignoring build!")
+                            print("💀 Ignoring build...")
+                            sound_say(f"Ignorando build...")
                             ignore_build = True
-                    print("all found commands:", found_commands)
 
-                print("ignore build:", ignore_build)
+                    print("commands:", found_commands)
+
                 if not ignore_build:
-                    successful_build: bool = build_dump_logs_and_compact(
-                        config if not additional_build_config else additional_build_config,
-                        logs,
-                        last_built_revision
-                        )
+                    successful_build: bool = build_dump_logs_and_compact(config, logs, last_built_revision)
                     if not successful_build:
-                        last_built_revision = current_revision
+                        last_built_revision = current_revision # do not repeat building
                         wait(config)
                         continue
 
+                print(_make_line(), f"\n🍆 Build completed for r{current_revision}!")
                 sound_play_random(config.sounds.build_success)
-                print(_make_line(), f"\n🍆 Build completed for r{last_built_revision}!")
+                sound_say(f"Build {config.uat.build_type} completada!")
 
                 last_built_revision = current_revision
 
