@@ -72,13 +72,13 @@ def try_find_uproject_path(project_path: Path) -> Path | None:
         return None
 
     for root, _, files in project_path.walk():
-        print(f"Searching project path... root: {root} | files: {files}")
         for file in files:
             file = Path(file)
             if file.suffix == ".uproject":
                 path = (root / file).resolve()
                 return path
 
+    print(f"Could not find .uproject on {project_path}")
     return None
 
 #==============================================================================

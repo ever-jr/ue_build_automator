@@ -1,4 +1,3 @@
-from copy import copy
 from enum import Enum
 from pathlib import Path
 import random
@@ -475,6 +474,11 @@ def _run():
 
                     print("commands:", found_commands)
 
+
+                if len(logs) > 0:
+                    print("dumping current logs on build!")
+                    build_dump_log_file(build_find(config), logs)
+
                 if not ignore_build:
                     successful_build: bool = build_dump_logs_and_compact(config, logs, last_built_revision)
                     if not successful_build:
@@ -482,6 +486,7 @@ def _run():
                         wait(config)
                         continue
 
+                # dump steam_appid.txt
                 print(_make_line(), f"\n🍆 Build completed for r{current_revision}!")
                 sound_play_random(config.sounds.build_success)
                 sound_say(f"Build {config.uat.build_type} completada!")
